@@ -17,10 +17,10 @@
     "runDur": "600",
     "TLS": "disabled",
     "channelOpt": {
-        "name": "testChannel1",
+        "name": "testOrgsChannel1",
         "action":  "create",
         "orgName": [
-            "testOrg1"
+            "org1"
         ]
     },
     "burstOpt": {
@@ -39,7 +39,7 @@
     },
     "ccType": "ccchecker",
     "ccOpt": {
-        "keyStart": "0",
+        "keyStart": "300000",
         "payLoadMin": "1024",
         "payLoadMax": "1024"
     },

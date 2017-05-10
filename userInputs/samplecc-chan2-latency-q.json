@@ -12,15 +12,15 @@
     "nPeer": "4",
     "nOrg": "2",
     "nPeerPerOrg": "2",
-    "nThread": "4",
-    "nRequest": "10",
+    "nThread": "1",
+    "nRequest": "1000",
     "runDur": "600",
     "TLS": "disabled",
     "channelOpt": {
-        "name": "testChannel2",
+        "name": "testOrgsChannel2",
         "action":  "create",
         "orgName": [
-            "testOrg1"
+            "org1"
         ]
     },
     "burstOpt": {

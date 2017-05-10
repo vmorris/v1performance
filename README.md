@@ -7,8 +7,8 @@ The Performance Traffic Engine (PTE) uses [Hyperledger Fabric Client (HFC) SDK](
 
 ##Code Base
 
-- Fabric commit level: 9e40c3c0070303285b4249112c966969551d9056
-- fabric-sdk-node commit level: 45c2f389ef37f3eab64cfceace46b0157abb9d33
+- Fabric commit level: f3c61e6cc3b04915081b15bbed000b377b53c4c1
+- fabric-sdk-node commit level: 80d85084f574e593a634459e132eb8a552e80a7e
 - fabric-ca commit level: 77dc0ce08853615e6876db81fb9384c4e9c31209
 - PTE v1performance commit level: current (or 6e7909754fe427062f841d91ee9293aabcccafe3)
 
@@ -17,7 +17,7 @@ For v1.0.0-alpha support, use v1performance commit level  aa73747ccf5f511fbcd10a
 
 - Fabric commit level: fa3d88cde177750804c7175ae000e0923199735c
 - fabric-sdk-node commit level: 196d0484c884ab894374c73df89bfe047bcc9f00
-- fabric-ca commit level: 29385879bc2931cce9ec833acf796129908b72fb
+- fabric-ca commit level: 4f8666363c13c48327edd4e75403a56b806d745b
 - PTE v1performance commit level: aa73747ccf5f511fbcd10a962dd1e588bde1a8b0`
 
 ##Pre-requisites
@@ -35,17 +35,17 @@ To build and test, the following pre-requisites must be installed first, see [Hy
 1. cd $GOPATH/src/github.com/hyperledger
 - git clone https://github.com/hyperledger/fabric
 - cd fabric
-- git reset --hard 9e40c3c0070303285b4249112c966969551d9056
+- git reset --hard f3c61e6cc3b04915081b15bbed000b377b53c4c1
 - make docker
 - cd ..
 - git clone https://github.com/hyperledger/fabric-ca
 - cd fabric-ca
-- git reset --hard 77dc0ce08853615e6876db81fb9384c4e9c31209
+- git reset --hard 4f8666363c13c48327edd4e75403a56b806d745b
 - make docker
 - cd ..
 - git clone https://github.com/hyperledger/fabric-sdk-node.git
 - cd fabric-sdk-node
-- git reset --hard 45c2f389ef37f3eab64cfceace46b0157abb9d33
+- git reset --hard 80d85084f574e593a634459e132eb8a552e80a7e
 - rm -rf node_modules
 - npm install
 - gulp ca
@@ -268,6 +268,8 @@ The service credentials contain the information of the network.  The following i
                         "name": "PeerOrg1",
                         "mspid": "PeerOrg1",
                         "ca": "http://10.120.223.35:7054",
+                        "username": "admin",
+                        "secret": "adminpw",
                         "peer1": {
                                 "requests": "grpc://10.120.223.35:7061",
                                 "events": "grpc://10.120.223.35:6051",
@@ -285,6 +287,8 @@ The service credentials contain the information of the network.  The following i
                         "name": "PeerOrg2",
                         "mspid": "PeerOrg2",
                         "ca": "http://10.120.223.35:7055",
+                        "username": "admin",
+                        "secret": "adminpw",
                         "peer1": {
                                 "requests": "grpc://10.120.223.35:7063",
                                 "events": "grpc://10.120.223.35:6053",
@@ -298,14 +302,7 @@ The service credentials contain the information of the network.  The following i
                                 "tls_cacerts": "../fixtures/tls/peers/peer3/ca-cert.pem"
                         }
                 }
-        },
-        "users":
-        {
-            "username": "admin",
-            "secret": "adminpw",
-            "affiliation": "bank_a"
         }
-
     }
 
 
@@ -332,7 +329,7 @@ The following chaincodes are tested and supported:
 File runCases.txt may contain more than one testcase, executed sequentially.
 A testcase is a userInput file, which defines all the test parameters, including transaction type, number of threads, number of transactions, duration, etc. 
 All threads in one testcase will concurrently execute the specified transaction.
-Different transactions may be used in different testcases included within a single runCases.txt file, making it possible for example to send a certain number of invokes to all peers and then query each peer.
+Different transactions may be used in different testCases included within a single runCases.txt file, making it possible for example to send a certain number of invokes to all peers and then query each peer.
 
 Two types of transaction requests:
 
@@ -372,7 +369,7 @@ To join all peers in an org to a channel, set the action in channelOpt to join, 
 
     "channelOpt": {
         "name": "testChannel1",
-        "action":  "create",
+        "action":  "join",
         "orgName": [
             "testOrg1"
         ]
@@ -394,7 +391,7 @@ To install or instantiate a chaincode, set up the deploy clause according to the
 To install a chaincode, set the transType as install:
 
     "transMode": "Simple",
-    "transType": "instantiate",
+    "transType": "install",
     "invokeType": "Move",
 
 and set channelOpt name to channel name and orgName to org name:

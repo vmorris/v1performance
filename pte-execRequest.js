@@ -53,7 +53,6 @@ utils.setConfigSetting('crypto-keysize', 256);
 
 
 // local vars
-var the_user;
 var tmp;
 var tCurr;
 var tEnd;
@@ -77,7 +76,7 @@ var eventHubs=[];
 var targets = [];
 var eventPromises = [];
 
-testUtil.setupChaincodeDeploy();
+//testUtil.setupChaincodeDeploy();
 
 // need to override the default key size 384 to match the member service backend
 // otherwise the client will not be able to decrypt the enrollment challenge
@@ -92,7 +91,8 @@ var pid = parseInt(process.argv[2]);
 var Nid = parseInt(process.argv[3]);
 var uiFile = process.argv[4];
 var tStart = parseInt(process.argv[5]);
-console.log('[Nid:id=%d:%d] input parameters: Nid=%d, uiFile=%s, tStart=%d', Nid, pid, Nid, uiFile, tStart);
+var org=process.argv[6];
+console.log('[Nid:id=%d:%d] input parameters: Nid=%d, uiFile=%s, tStart=%d, org=%s', Nid, pid, Nid, uiFile, tStart, org);
 var uiContent = JSON.parse(fs.readFileSync(uiFile));
 var TLS=uiContent.TLS;
 var channelOpt=uiContent.channelOpt;
@@ -127,7 +127,6 @@ console.log('[Nid:id=%d:%d] logLevel: %s', Nid, pid, logLevel);
 logger.setLevel(logLevel);
 
 var svcFile = uiContent.SCFile[0].ServiceCredentials;
-var org=channelOrgName[0];
 console.log('svcFile: %s, org: %s', svcFile, org);
 hfc.addConfigFile(path.join(__dirname, svcFile));
 var ORGS = hfc.getConfigSetting('test-network');
@@ -182,7 +181,7 @@ var request_invoke;
 function getMoveRequest() {
     if ( ccType == 'ccchecker') {
         arg0 ++;
-        testInvokeArgs[1] = 'key_'+channelID+'_'+pid+'_'+arg0;
+        testInvokeArgs[1] = 'key_'+channelName+'_'+org+'_'+pid+'_'+arg0;
         // random payload
         var r = Math.floor(Math.random() * (payLoadMax - payLoadMin)) + payLoadMin;
 
@@ -224,7 +223,7 @@ var request_query;
 function getQueryRequest() {
     if ( ccType == 'ccchecker') {
         arg0 ++;
-        testQueryArgs[1] = 'key_'+channelID+'_'+pid+'_'+arg0;
+        testQueryArgs[1] = 'key_'+channelName+'_'+org+'_'+pid+'_'+arg0;
     }
 
     nonce = utils.getNonce();
@@ -251,32 +250,32 @@ function assignThreadPeer(chain, client) {
     for (let key1 in ORGS) {
         if (ORGS.hasOwnProperty(key1)) {
             for (let key in ORGS[key1]) {
-            if (key.indexOf('peer') === 0) {
+            if (key.indexOf('peer1') === 0) {
                 if (peerIdx == pid % nPeer) {
                 if (TLS.toUpperCase() == 'ENABLED') {
-                    let data = fs.readFileSync(path.join(__dirname, ORGS[key1][key].tls_cacerts));
-                    peerTmp = new Peer(
+                    let data = fs.readFileSync(ORGS[key1][key]['tls_cacerts']);
+                    peerTmp = client.newPeer(
                         ORGS[key1][key].requests,
                         {
                             pem: Buffer.from(data).toString(),
-                            'ssl-target-name-override': ORGS[key1][key].server-hostname
+                            'ssl-target-name-override': ORGS[key1][key]['server-hostname']
                         }
                     );
                     targets.push(peerTmp);
                     chain.addPeer(peerTmp);
                 } else {
-                    peerTmp = new Peer( ORGS[key1][key].requests);
+                    peerTmp = client.newPeer( ORGS[key1][key].requests);
                     targets.push(peerTmp);
                     chain.addPeer(peerTmp);
                 }
 
-                    eh=new EventHub();
+                    eh=new EventHub(client);
                     if (TLS.toUpperCase() == 'ENABLED') {
                         eh.setPeerAddr(
                             ORGS[key1][key].events,
                             {
                                 pem: Buffer.from(data).toString(),
-                                'ssl-target-name-override': ORGS[key1][key].server-hostname
+                                'ssl-target-name-override': ORGS[key1][key]['server-hostname']
                             }
                         );
                     } else {
@@ -294,6 +293,55 @@ function assignThreadPeer(chain, client) {
     console.log('[assignThreadPeer Nid:pid=%d:%d] add peer: ', Nid, pid, chain.getPeers());
 }
 
+function assignThreadOrgPeer(chain, client, org) {
+    console.log('[assignThreadOrgPeer Nid:pid=%d:%d] chain name: %s, org: %s', Nid, pid, chain.getName(), org);
+    var peerIdx=0;
+    var peerTmp;
+    var eh;
+    for (let key in ORGS[org]) {
+        if (ORGS[org].hasOwnProperty(key)) {
+            if (key.indexOf('peer') === 0) {
+                if (peerIdx == pid % nPeerPerOrg) {
+                    if (TLS.toUpperCase() == 'ENABLED') {
+                        let data = fs.readFileSync(ORGS[org][key]['tls_cacerts']);
+                        peerTmp = client.newPeer(
+                            ORGS[org][key].requests,
+                            {
+                                pem: Buffer.from(data).toString(),
+                                'ssl-target-name-override': ORGS[org][key]['server-hostname']
+                            }
+                        );
+                        targets.push(peerTmp);
+                        chain.addPeer(peerTmp);
+                    } else {
+                        peerTmp = client.newPeer( ORGS[org][key].requests);
+                        //targets.push(peerTmp);
+                        chain.addPeer(peerTmp);
+                    }
+
+                    eh=new EventHub(client);
+                    if (TLS.toUpperCase() == 'ENABLED') {
+                        eh.setPeerAddr(
+                            ORGS[org][key].events,
+                            {
+                                pem: Buffer.from(data).toString(),
+                                'ssl-target-name-override': ORGS[org][key]['server-hostname']
+                            }
+                        );
+                    } else {
+                        eh.setPeerAddr(ORGS[org][key].events);
+                    }
+                    eh.connect();
+                    eventHubs.push(eh);
+                }
+                peerIdx++;
+            }
+        }
+    }
+    console.log('[assignThreadOrgPeer Nid:pid=%d:%d] org: %s, add peer: ', Nid, pid, org, chain.getPeers());
+}
+
+
 function channelAddPeer(chain, client, org) {
     console.log('[channelAddPeer] chain name: ', chain.getName());
     var peerTmp;
@@ -302,8 +350,8 @@ function channelAddPeer(chain, client, org) {
         if (ORGS[org].hasOwnProperty(key)) {
             if (key.indexOf('peer') === 0) {
                 if (TLS.toUpperCase() == 'ENABLED') {
-                    let data = fs.readFileSync(path.join(__dirname, ORGS[org][key]['tls_cacerts']));
-                    peerTmp = new Peer(
+                    let data = fs.readFileSync(ORGS[org][key]['tls_cacerts']);
+                    peerTmp = client.newPeer(
                         ORGS[org][key].requests,
                         {
                             pem: Buffer.from(data).toString(),
@@ -313,7 +361,7 @@ function channelAddPeer(chain, client, org) {
                     targets.push(peerTmp);
                     chain.addPeer(peerTmp);
                 } else {
-                    peerTmp = new Peer( ORGS[org][key].requests);
+                    peerTmp = client.newPeer( ORGS[org][key].requests);
                     targets.push(peerTmp);
                     chain.addPeer(peerTmp);
                 }
@@ -333,8 +381,8 @@ function channelAddPeerEvent(chain, client, org) {
                 if (ORGS[org].hasOwnProperty(key)) {
                     if (key.indexOf('peer') === 0) {
                         if (TLS.toUpperCase() == 'ENABLED') {
-                            let data = fs.readFileSync(path.join(__dirname, ORGS[org][key]['tls_cacerts']));
-                            peerTmp = new Peer(
+                            let data = fs.readFileSync(ORGS[org][key]['tls_cacerts']);
+                            peerTmp = client.newPeer(
                                 ORGS[org][key].requests,
                                 {
                                     pem: Buffer.from(data).toString(),
@@ -342,13 +390,13 @@ function channelAddPeerEvent(chain, client, org) {
                                 }
                             );
                         } else {
-                            peerTmp = new Peer( ORGS[org][key].requests);
+                            peerTmp = client.newPeer( ORGS[org][key].requests);
                             console.log('[channelAddPeerEvent] peer: ', ORGS[org][key].requests);
                         }
                         targets.push(peerTmp);
                         chain.addPeer(peerTmp);
 
-                        eh=new EventHub();
+                        eh=new EventHub(client);
                         if (TLS.toUpperCase() == 'ENABLED') {
                             eh.setPeerAddr(
                                 ORGS[org][key].events,
@@ -374,7 +422,7 @@ function channelAddOrderer(chain, client, org) {
     console.log('[channelAddOrderer] chain name: ', chain.getName());
     if (TLS.toUpperCase() == 'ENABLED') {
         var caRootsPath = ORGS.orderer.tls_cacerts;
-        let data = fs.readFileSync(path.join(__dirname, caRootsPath));
+        let data = fs.readFileSync(caRootsPath);
         let caroots = Buffer.from(data).toString();
 
         chain.addOrderer(
@@ -394,14 +442,14 @@ function channelAddOrderer(chain, client, org) {
 }
 
 function channelAddAnchorPeer(chain, client, org) {
-    console.log('[channelAddAnchorPeer] chain name: ', chain.getName());
+    console.log('[[Nid:id=%d:%d] channelAddAnchorPeer] chain name: %s, org: %s', Nid, pid, chain.getName(), org);
     var peerTmp;
     var eh;
     for (let key in ORGS) {
         if (ORGS.hasOwnProperty(key) && typeof ORGS[key].peer1 !== 'undefined') {
                 if (TLS.toUpperCase() == 'ENABLED') {
-                    let data = fs.readFileSync(path.join(__dirname, ORGS[key].peer1['tls_cacerts']));
-                    peerTmp = new Peer(
+                    let data = fs.readFileSync(ORGS[key].peer1['tls_cacerts']);
+                    peerTmp = client.newPeer(
                         ORGS[key].peer1.requests,
                         {
                             pem: Buffer.from(data).toString(),
@@ -412,32 +460,32 @@ function channelAddAnchorPeer(chain, client, org) {
                     chain.addPeer(peerTmp);
                 } else {
                     //console.log('[channelAddAnchorPeer] key: %s, peer1: %s', key, ORGS[org].peer1.requests);
-                    peerTmp = new Peer( ORGS[key].peer1.requests);
+                    peerTmp = client.newPeer( ORGS[key].peer1.requests);
                     targets.push(peerTmp);
                     chain.addPeer(peerTmp);
                 }
 
-                if ( invokeType.toUpperCase() == 'MOVE' ) {
-                eh=new EventHub();
-                if (TLS.toUpperCase() == 'ENABLED') {
-                    eh.setPeerAddr(
-                        ORGS[key].peer1.events,
-                        {
-                            pem: Buffer.from(data).toString(),
-                            'ssl-target-name-override': ORGS[key].peer1['server-hostname']
-                        }
-                    );
-                } else {
-                    eh.setPeerAddr(ORGS[key].peer1.events);
-                }
-                eh.connect();
-                eventHubs.push(eh);
-                console.log('[channelAddAnchorPeer] requests: %s, events: %s ', ORGS[key].peer1.requests, ORGS[key].peer1.events);
+                if ( (invokeType.toUpperCase() == 'MOVE') && ( key == org ) ) {
+                    eh=new EventHub(client);
+                    if (TLS.toUpperCase() == 'ENABLED') {
+                        eh.setPeerAddr(
+                            ORGS[key].peer1.events,
+                            {
+                                pem: Buffer.from(data).toString(),
+                                'ssl-target-name-override': ORGS[key].peer1['server-hostname']
+                            }
+                        );
+                    } else {
+                        eh.setPeerAddr(ORGS[key].peer1.events);
+                    }
+                    eh.connect();
+                    eventHubs.push(eh);
+                    console.log('[channelAddAnchorPeer] requests: %s, events: %s ', ORGS[key].peer1.requests, ORGS[key].peer1.events);
                 }
         }
     }
-    console.log('[channelAddAnchorPeer] get peer: ', chain.getPeers());
-    console.log('[channelAddAnchorPeer] event: ', eventHubs);
+    console.log('[[Nid:id=%d:%d] channelAddAnchorPeer] get peer: ', Nid, pid, chain.getPeers());
+    console.log('[[Nid:id=%d:%d] channelAddAnchorPeer] event: ', Nid, pid, eventHubs);
 }
 
 /*
@@ -451,9 +499,13 @@ function execTransMode() {
     inv_m = 0;
     inv_q = 0;
 
-    var caRootsPath = ORGS.orderer.tls_cacerts;
-    let data = fs.readFileSync(path.join(__dirname, caRootsPath));
-    let caroots = Buffer.from(data).toString();
+    //var caRootsPath = ORGS.orderer.tls_cacerts;
+    //let data = fs.readFileSync(caRootsPath);
+    //let caroots = Buffer.from(data).toString();
+    var username = ORGS[org].username;
+    var secret = ORGS[org].secret;
+    console.log('[execTransMode] user= %s, secret=%s', username, secret);
+
 
 
     //enroll user
@@ -462,9 +514,9 @@ function execTransMode() {
     }).then(
         function (store) {
             client.setStateStore(store);
-            console.log('[Nid:id=%d:%d] Successfully setStateStore', Nid, pid);
 
-            testUtil.getSubmitter(users.username, users.secret, client, false, org)
+            client._userContext = null;
+            testUtil.getSubmitter(username, secret, client, true, org, svcFile)
             .then(
                 function(admin) {
 
@@ -473,8 +525,8 @@ function execTransMode() {
 
                     channelAddOrderer(chain, client, org)
 
-                    //channelAddAnchorPeer(chain, client, org);
-                    assignThreadPeer(chain, client);
+                    channelAddAnchorPeer(chain, client, org);
+                    //assignThreadOrgPeer(chain, client, org);
 
 	            tCurr = new Date().getTime();
                     var tSynchUp=tStart-tCurr;
@@ -483,6 +535,8 @@ function execTransMode() {
                     }
 	            console.log('Nid:id=%d:%d, execTransMode: tCurr= %d, tStart= %d, time to wait=%d', Nid, pid, tCurr, tStart, tSynchUp);
                     // execute transactions
+                    chain.initialize()
+                    .then((success) => {
                     setTimeout(function() {
                         if (transMode.toUpperCase() == 'SIMPLE') {
                             execModeSimple();
@@ -500,6 +554,7 @@ function execTransMode() {
                             process.exit(1);
                         }
                     }, tSynchUp);
+                    });
                 },
                 function(err) {
                     console.log('[Nid:id=%d:%d] Failed to wait due to error: ', Nid, pid, err.stack ? err.stack : err);

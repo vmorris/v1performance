@@ -5,15 +5,15 @@
     "chainID": "testchainid",
     "logLevel": "ERROR",
     "invokeCheck": "FALSE",
-    "transMode": "Mix",
+    "transMode": "Constant",
     "transType": "Invoke",
-    "invokeType": "Move",
+    "invokeType": "Query",
     "nOrderer": "1",
     "nPeer": "4",
     "nOrg": "2",
     "nPeerPerOrg": "2",
     "nThread": "2",
-    "nRequest": "0",
+    "nRequest": "1000",
     "runDur": "600",
     "TLS": "disabled",
     "channelOpt": {
@@ -30,18 +30,18 @@
         "burstDur1": "10000"
     },
     "mixOpt": {
-        "mixFreq": "2000"
+        "mixFreq": "3000"
     },
     "constantOpt": {
         "recHist": "HIST",
-        "constFreq": "400",
-        "devFreq": "100"
+        "constFreq": "0",
+        "devFreq": "0"
     },
     "ccType": "ccchecker",
     "ccOpt": {
-        "keyStart": "200000",
+        "keyStart": "10000",
         "payLoadMin": "1024",
-        "payLoadMax": "512000"
+        "payLoadMax": "1024"
     },
     "deploy": {
         "chaincodePath": "github.com/sample_cc",

@@ -5,7 +5,7 @@
     "chainID": "testchainid",
     "logLevel": "ERROR",
     "invokeCheck": "FALSE",
-    "transMode": "Mix",
+    "transMode": "Burst",
     "transType": "Invoke",
     "invokeType": "Move",
     "nOrderer": "1",
@@ -39,7 +39,7 @@
     },
     "ccType": "ccchecker",
     "ccOpt": {
-        "keyStart": "200000",
+        "keyStart": "100000",
         "payLoadMin": "1024",
         "payLoadMax": "512000"
     },
@@ -59,6 +59,6 @@
         }
     },
     "SCFile": [
-		{"ServiceCredentials":"SCFiles/config-chan2.json"}
+		{"ServiceCredentials":"SCFiles/config-chan1.json"}
 	]
 }

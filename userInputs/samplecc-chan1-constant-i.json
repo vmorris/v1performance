@@ -4,23 +4,23 @@
     "chaincodeVer": "v0",
     "chainID": "testchainid",
     "logLevel": "ERROR",
-    "invokeCheck": "FALSE",
+    "invokeCheck": "TRUE",
     "transMode": "Constant",
     "transType": "Invoke",
-    "invokeType": "Query",
+    "invokeType": "Move",
     "nOrderer": "1",
     "nPeer": "4",
     "nOrg": "2",
     "nPeerPerOrg": "2",
-    "nThread": "4",
+    "nThread": "2",
     "nRequest": "1000",
     "runDur": "600",
     "TLS": "disabled",
     "channelOpt": {
-        "name": "testChannel1",
+        "name": "testOrgsChannel1",
         "action":  "create",
         "orgName": [
-            "testOrg1"
+            "org1"
         ]
     },
     "burstOpt": {
@@ -39,12 +39,12 @@
     },
     "ccType": "ccchecker",
     "ccOpt": {
-        "keyStart": "0",
+        "keyStart": "1000",
         "payLoadMin": "1024",
         "payLoadMax": "1024"
     },
     "deploy": {
-        "chaincodePath": "github.com/sample_cc",
+        "chaincodePath": "github.com/hyperledger/fabric-sdk-node/test/fixtures/src/github.com/sample_cc",
         "fcn": "init",
         "args": []
     },
